@@ -7,6 +7,7 @@ DHT dht(DHTPIN, DHTTYPE);
 SoftwareSerial mySerial(10, 11); // RX, TX 
 const int led1 = 13;  // LED en el pin 13 (Verde)
 
+/VETE A LA MIERDA NIGGER NIGGER NIGGER 
 
 void setup() {
 
