@@ -20,43 +20,43 @@ void setup() {
     pinMode(LED_PIN, OUTPUT);
     digitalWrite(LED_PIN, LOW);
 
-    Serial.println("🛰️ Receptor listo. Esperando comandos desde Python...");
+    Serial.println("Receptor listo. Esperando comandos desde Python...");
 }
 
 void loop() {
-    // 1️⃣ DATOS DEL EMISOR → PYTHON
+    // DATOS DEL EMISOR → PYTHON
     while (EmisorSerial.available()) {
         char data = EmisorSerial.read();
         Serial.write(data); // Reenvía byte a la PC
     }
 
-    // 2️⃣ COMANDOS DESDE PYTHON
+    // COMANDOS DESDE PYTHON
     if (Serial.available() > 0) {
         // Leemos el mensaje completo si es una palabra
         String comando = Serial.readStringUntil('\n');
         comando.trim();
 
-        // Caso 1: Parpadeo rápido (comando 'P')
+        // Caso 1: parpadeo rápido (comando 'P')
         if (comando == "P") {
             isBlinking = 1;
             lastBlinkTime = millis();
             digitalWrite(LED_PIN, HIGH);
         }
 
-        // Caso 2: Comando textual "Parar" → reenviar al Emisor
+        // Caso 2: comando textual "Parar" → reenviar al Emisor
         else if (comando.equalsIgnoreCase("Parar")) {
             EmisorSerial.println("Parar");
-            Serial.println("🛑 Orden 'Parar' enviada al satélite.");
+            Serial.println("Orden 'Parar' enviada al satélite.");
         }
 
-        // Caso 3: Comando textual "Reanudar" → reenviar al Emisor
+        // Caso 3: comando textual "Reanudar" → reenviar al Emisor
         else if (comando.equalsIgnoreCase("Reanudar")) {
             EmisorSerial.println("Reanudar");
-            Serial.println("▶️ Orden 'Reanudar' enviada al satélite.");
+            Serial.println("Orden 'Reanudar' enviada al satélite.");
         }
     }
 
-    // 3️⃣ LÓGICA DE PARPADEO
+    // LÓGICA DE PARPADEO
     if (isBlinking == 1) {
         if ((millis() - lastBlinkTime) >= BLINK_DURATION_MS) {
             digitalWrite(LED_PIN, LOW);
