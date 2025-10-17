@@ -20,7 +20,7 @@ void setup() {
 
   dht.begin();
 
-  Serial.println("🚀 Satélite listo. Transmisión activa.");
+  Serial.println("Satélite listo. Transmisión activa.");
 }
 
 void loop() {
@@ -32,11 +32,11 @@ void loop() {
     if (orden.equalsIgnoreCase("Parar")) {
       enviarDatos = false;
       digitalWrite(led1, LOW);
-      Serial.println("🛑 Transmisión detenida (orden PARAR recibida).");
+      Serial.println("Transmisión detenida (orden PARAR recibida).");
     } 
     else if (orden.equalsIgnoreCase("Reanudar")) {
       enviarDatos = true;
-      Serial.println("▶️ Transmisión reanudada (orden REANUDAR recibida).");
+      Serial.println("Transmisión reanudada (orden REANUDAR recibida).");
     }
   }
 
@@ -46,11 +46,11 @@ void loop() {
     float t = dht.readTemperature();
 
     if (isnan(h) || isnan(t)) {
-      Serial.println("⚠️ Error al leer el sensor DHT11");
+      Serial.println("Error al leer el sensor DHT11");
     } else {
       digitalWrite(led1, HIGH);
       delay(500);
-      // 💡 Mantenemos el mismo formato que ya usabas:
+      // Mantenemos el mismo formato que ya usabas:
       // Ejemplo: T:25.5:H:60.2:
       mySerial.print("T:");
       mySerial.print(t);
