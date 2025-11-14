@@ -7,19 +7,13 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import numpy as np
 
-# =====================================================
 # CONFIGURACIÓN DE PUERTO SERIE
-# =====================================================
-# CAMBIO 7: ahora solo hay UN puerto serie hacia la estación de Tierra.
-# La estación de Tierra se encarga de comunicarse con el satélite.
-device_tierra = 'COM5'      # Puerto de la estación de Tierra (ajustar según tu PC)
+device_tierra = 'COM5'   
 BAUDRATE = 9600
 ser_tierra = serial.Serial(device_tierra, BAUDRATE, timeout=1)
 time.sleep(2)
 
-# =====================================================
 # VARIABLES GLOBALES - TEMPERATURA / HUMEDAD
-# =====================================================
 temperaturas = []     # historial de temperaturas recibidas
 humedades = []        # historial de humedades recibidas
 medias_10 = []        # media móvil de 10 valores (o valor calculado por Arduino)
@@ -31,9 +25,7 @@ hum = 0.0
 limite_temp = 30.0  # Valor límite inicial
 nuevo_periodo = 5   # periodo inicial (segundos)
 
-# =====================================================
 # VARIABLES GLOBALES - RADAR ULTRASÓNICO
-# =====================================================
 angulos = []              # ángulos en radianes para la gráfica polar
 distancias = []           # distancias correspondientes
 historial_validas = []    # (tiempo, distancia) para ajuste dinámico de escala
@@ -44,9 +36,7 @@ tiempo_ventana_dist = 5.0
 errores_distancia = 0
 ultimo_cambio_escala_tiempo = time.time()
 
-# =====================================================
 # FUNCIONES AUXILIARES
-# =====================================================
 def actualizar_radiales(ax, max_escala):
     """Actualiza las divisiones radiales de la gráfica de radar."""
     num_divisiones = 6
@@ -55,9 +45,7 @@ def actualizar_radiales(ax, max_escala):
     ax.set_yticks(ticks_visibles)
     ax.set_yticklabels([f"{int(t)}" for t in ticks_visibles], fontsize=9)
 
-# =====================================================
 # INTERFAZ GRÁFICA (Tkinter)
-# =====================================================
 root = tk.Tk()
 root.title("Panel Satélite - Control de Temperatura/Humedad y Radar")
 
@@ -68,9 +56,7 @@ frame_izq.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 frame_der = ttk.Frame(root, padding=10)
 frame_der.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
-# -------------------------
 # BOTONES CONTROL TEMP/HUM
-# -------------------------
 frame_botones = ttk.Frame(frame_izq, padding=10)
 frame_botones.pack(side=tk.TOP, fill=tk.X)
 
@@ -83,7 +69,6 @@ def iniciar():
     if not recibiendo:
         recibiendo = True
         recepcion_activa = True
-        # CAMBIO 8: un único hilo central que recibe TODOS los datos desde Tierra
         hilo = threading.Thread(target=recepcion_datos, daemon=True)
         hilo.start()
         print("Recepción iniciada.")
@@ -143,9 +128,7 @@ def cambiar_modo(event):
 
 modo_combo.bind("<<ComboboxSelected>>", cambiar_modo)
 
-# -------------------------
 # Límite de temperatura media
-# -------------------------
 frame_limite = ttk.Frame(frame_izq, padding=10)
 frame_limite.pack(side=tk.TOP, fill=tk.X)
 ttk.Label(frame_limite, text="Límite de temperatura media (°C):").pack(side=tk.LEFT)
@@ -164,9 +147,7 @@ def actualizar_limite():
 
 ttk.Button(frame_limite, text="Actualizar", command=actualizar_limite).pack(side=tk.LEFT, padx=5)
 
-# -------------------------
 # Periodo de envío (segundos)
-# -------------------------
 frame_periodo = ttk.Frame(frame_izq, padding=10)
 frame_periodo.pack(side=tk.TOP, fill=tk.X)
 ttk.Label(frame_periodo, text="Periodo deseado (s):").pack(side=tk.LEFT)
@@ -175,9 +156,7 @@ periodo_entry.insert(0, str(nuevo_periodo))
 periodo_entry.pack(side=tk.LEFT)
 ttk.Button(frame_periodo, text="Actualizar", command=periodo).pack(side=tk.LEFT, padx=5)
 
-# =====================================================
 # GRÁFICAS TEMPERATURA/HUMEDAD
-# =====================================================
 fig_temp, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(6, 8))
 fig_temp.tight_layout(pad=3)
 linea_temp, = ax1.plot([], [], 'y-', label="Temperatura")
@@ -195,9 +174,7 @@ ax3.set_xlabel("Iteraciones")
 canvas_temp = FigureCanvasTkAgg(fig_temp, master=frame_izq)
 canvas_temp.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
-# =====================================================
 # GRÁFICA RADAR ULTRASÓNICO (polar)
-# =====================================================
 fig_radar = plt.Figure(figsize=(6, 6))
 ax_radar = fig_radar.add_subplot(111, polar=True)
 ax_radar.set_ylim(0, max_escala)
@@ -214,9 +191,7 @@ actualizar_radiales(ax_radar, max_escala)
 canvas_radar = FigureCanvasTkAgg(fig_radar, master=frame_der)
 canvas_radar.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
-# -------------------------
 # Control de ángulo del radar
-# -------------------------
 frame_angulo = ttk.Frame(frame_der, padding=10)
 frame_angulo.pack(fill="x")
 ttk.Label(frame_angulo, text="Ángulo (-90 a 90):").pack(side="left")
@@ -238,7 +213,6 @@ def enviar_angulo():
         print("El ángulo debe estar entre -90 y 90.")
         return
 
-    # CAMBIO 9: usamos protocolo ANG:<valor> y lo enviamos a la estación de Tierra
     comando = f"ANG:{ang_esc}\n"
     ser_tierra.write(comando.encode("ascii"))
     print("Ángulo enviado a estación:", ang_esc)
@@ -247,9 +221,7 @@ def enviar_angulo():
 btn_enviar = ttk.Button(frame_angulo, text="Enviar", command=enviar_angulo)
 btn_enviar.pack(side="left", padx=5)
 
-# =====================================================
 # HILO DE RECEPCIÓN ÚNICO (Tº/H y RADAR)
-# =====================================================
 def recepcion_datos():
     """
     Hilo que recibe continuamente datos desde la estación de Tierra.
@@ -269,9 +241,7 @@ def recepcion_datos():
                 time.sleep(0.05)
                 continue
 
-            # ------------------------------
             # Datos de temperatura/humedad
-            # ------------------------------
             if linea.startswith('T:'):
                 partes = linea.split(':')
                 if len(partes) >= 4 and partes[0] == 'T' and partes[2] == 'H':
@@ -285,30 +255,24 @@ def recepcion_datos():
                     temperaturas.append(temp if recepcion_activa else None)
                     humedades.append(hum if recepcion_activa else None)
 
-                    # Rellenar medias_10 con np.nan si es necesario
                     while len(medias_10) < len(temperaturas):
                         medias_10.append(np.nan)
 
-                    # Cálculo media móvil 10 (modo cálculo en tierra)
                     if modo_calculo == "tierra" and len(temperaturas) >= 10:
                         ultimos = [t for t in temperaturas[-10:] if t is not None]
                         if len(ultimos) == 10:
                             medias_10[-1] = sum(ultimos) / 10
 
-                    # Alerta si tres últimas medias válidas > límite
                     if len(medias_10) >= 3:
                         ultimas_3 = medias_10[-3:]
                         if all((m is not None) and not np.isnan(m) and m > limite_temp for m in ultimas_3):
                             messagebox.showwarning("Alerta", f"¡Tres medias consecutivas > {limite_temp} °C!")
-                            # CAMBIO 10: ahora se envía la alarma a la estación de Tierra
+                          
                             ser_tierra.write(b'ALARMA\n')
                 else:
                     print("Línea T/H con formato inesperado:", linea)
-                continue  # siguiente iteración del bucle
-
-            # ------------------------------
+                continue 
             # Datos de radar (ángulo,distancia)
-            # ------------------------------
             partes = linea.split(',')
             if len(partes) == 2:
                 ang_str, dist_str = partes[0].strip(), partes[1].strip()
@@ -321,7 +285,6 @@ def recepcion_datos():
                     canvas_radar.draw()
                     continue
 
-                # El satélite envía el ángulo del servo en 0..180; lo convertimos a -90..90
                 angulo_rad = np.deg2rad(angulo_deg - 90)
 
                 try:
@@ -340,7 +303,6 @@ def recepcion_datos():
                     historial_validas.append((ahora, d))
                     historial_validas = [(t, val) for (t, val) in historial_validas if ahora - t <= tiempo_ventana_dist]
 
-                    # Ajuste dinámico de la escala radial
                     if historial_validas:
                         max_reciente = max(val for (t, val) in historial_validas)
 
@@ -361,7 +323,6 @@ def recepcion_datos():
                     canvas_radar.draw()
 
                 except ValueError:
-                    # Texto no convertible a float: tratar como error de dato
                     errores_distancia += 1
                     angulos.append(angulo_rad)
                     distancias.append(np.nan)
@@ -374,31 +335,26 @@ def recepcion_datos():
                     canvas_radar.draw()
 
             else:
-                # Mensajes informativos (por ejemplo, "Comando recibido..." desde el satélite)
                 print("Mensaje:", linea)
 
         except Exception as e:
             print("Error en recepción:", e)
             break
 
-# =====================================================
 # ACTUALIZACIÓN PERIÓDICA DE LAS GRÁFICAS T/H
-# =====================================================
 def actualizar_graficas():
     """Actualiza las gráficas de temperatura, humedad y media en la interfaz."""
     x_vals = list(range(len(temperaturas)))
 
-    # Graficar temperaturas, humedades y medias
     linea_temp.set_data(x_vals, temperaturas)
     linea_hum.set_data(x_vals, humedades)
     linea_media.set_data(x_vals, medias_10)
 
     for ax in (ax1, ax2, ax3):
-        ax.set_xlim(0, max(len(x_vals), 10))  # eje X común
+        ax.set_xlim(0, max(len(x_vals), 10))  
         ax.relim()
         ax.autoscale_view(scalex=False, scaley=True)
 
-    # Actualizar títulos con valores actuales
     ax1.set_title(f"Temperatura actual: {temp:.2f} °C")
     ax2.set_title(f"Humedad actual: {hum:.2f} %")
     if len(medias_10) > 0 and not np.isnan(medias_10[-1]):
@@ -409,8 +365,6 @@ def actualizar_graficas():
     canvas_temp.draw()
     root.after(500, actualizar_graficas)
 
-# =====================================================
 # INICIO DE LA APLICACIÓN
-# =====================================================
 root.after(500, actualizar_graficas)
 root.mainloop()
