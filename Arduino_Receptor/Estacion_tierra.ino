@@ -1,66 +1,73 @@
-
+// ================================================
+// === ARDUINO ESTACIÓN DE TIERRA ================
+// === Puente entre Satélite y PC (Python) =======
+// ================================================
 
 #include <SoftwareSerial.h>
 
-// --- CONFIGURACIÓN DE PINES Y VELOCIDADES ---
-#define LED_PIN 13              // Pin del LED integrado
-#define BLINK_DURATION_MS 100   // Duración del pulso de encendido (en milisegundos)
-#define BAUDRATE 9600           // Velocidad de comunicación
+#define LED_PIN     13   // LED de actividad (verde)
+#define LED_ERROR    8   // LED rojo de error 
+#define BAUDRATE  9600
 
-// Comunicación con el Arduino Emisor (el del sensor):
-SoftwareSerial EmisorSerial(10, 11); // RX, TX
-
-// --- VARIABLES DE ESTADO ---
-int isBlinking = 0;
-unsigned long lastBlinkTime = 0;
+SoftwareSerial SatSerial(10, 11);  // RX, TX con Satélite
 
 void setup() {
-    Serial.begin(BAUDRATE);       // Comunicación con Python/PC
-    EmisorSerial.begin(BAUDRATE); // Comunicación con Arduino Emisor (Satélite)
-    pinMode(LED_PIN, OUTPUT);
-    digitalWrite(LED_PIN, LOW);
+  Serial.begin(BAUDRATE);
 
-    Serial.println("Receptor listo. Esperando comandos desde Python...");
+  SatSerial.begin(BAUDRATE);
+
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(LED_ERROR, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
+  digitalWrite(LED_ERROR, LOW);
+
+  Serial.setTimeout(50);
+  SatSerial.setTimeout(50);
+
+  Serial.println("Receptor (Tierra) listo. Esperando comandos desde Python...");
 }
 
 void loop() {
-    // DATOS DEL EMISOR → PYTHON
-    while (EmisorSerial.available()) {
-        char data = EmisorSerial.read();
-        Serial.write(data); // Reenvía byte a la PC
+  // =================================================
+  // DATOS DESDE SATÉLITE → PC
+  // =================================================
+  while (SatSerial.available()) {
+    char c = SatSerial.read();
+    Serial.write(c);
+  }
+
+  // =================================================
+  // COMANDOS DESDE PYTHON → SATÉLITE
+  // =================================================
+  if (Serial.available()) {
+    String comando = Serial.readStringUntil('\n');
+    comando.trim();
+
+    if (comando.length() == 0) {
+      return;
     }
 
-    // COMANDOS DESDE PYTHON
-    if (Serial.available() > 0) {
-        // Leemos el mensaje completo si es una palabra
-        String comando = Serial.readStringUntil('\n');
-        comando.trim();
-
-        // Caso 1: parpadeo rápido (comando 'P')
-        if (comando == "P") {
-            isBlinking = 1;
-            lastBlinkTime = millis();
-            digitalWrite(LED_PIN, HIGH);
-        }
-
-        // Caso 2: comando textual "Parar" → reenviar al Emisor
-        else if (comando.equalsIgnoreCase("Parar")) {
-            EmisorSerial.println("Parar");
-            Serial.println("Orden 'Parar' enviada al satélite.");
-        }
-
-        // Caso 3: comando textual "Reanudar" → reenviar al Emisor
-        else if (comando.equalsIgnoreCase("Reanudar")) {
-            EmisorSerial.println("Reanudar");
-            Serial.println("Orden 'Reanudar' enviada al satélite.");
-        }
+    if (comando.equalsIgnoreCase("Parar")) {
+      SatSerial.println("Parar");
+      digitalWrite(LED_PIN, LOW);
     }
-
-    // LÓGICA DE PARPADEO
-    if (isBlinking == 1) {
-        if ((millis() - lastBlinkTime) >= BLINK_DURATION_MS) {
-            digitalWrite(LED_PIN, LOW);
-            isBlinking = 0;
-        }
+    else if (comando.equalsIgnoreCase("Reanudar")) {
+      SatSerial.println("Reanudar");
+      digitalWrite(LED_PIN, HIGH);
     }
+    else if (comando.startsWith("Periodo:")) {
+      SatSerial.println(comando);
+    }
+    else if (comando.equalsIgnoreCase("Iniciar"))
+    {
+      SatSerial.println("Iniciar");
+      digitalWrite(LED_PIN,HIGH);
+    }
+    else if (comando.startsWith("ANG:")) {
+      SatSerial.println(comando);
+    }
+    else {
+      SatSerial.println(comando);
+    }
+  }
 }
