@@ -1,15 +1,11 @@
-// ===================================================
 // === ARDUINO SATÉLITE ==============================
 // === DHT11 + Ultrasonido + Servo Radar + Media T ===
-// ===================================================
 
 #include <SoftwareSerial.h>
 #include <DHT.h>
 #include <Servo.h>
 
-// -------------------------
 // CONFIGURACIÓN DE PINES
-// -------------------------
 #define DHTPIN   2
 #define DHTTYPE  DHT11
 #define TRIG_PIN 7
@@ -17,9 +13,7 @@
 #define SERVO_PIN 4
 #define LED_PIN 13
 
-// -------------------------
 // VARIABLES DE CONTROL
-// -------------------------
 const float MIN_CM = 3.0;
 const float MAX_CM = 700.0;
 
@@ -43,24 +37,18 @@ int anguloObjetivo = 0;            // ángulo al que se fija en modo manual (0-1
 unsigned long inicioManual = 0;    // instante en el que empezó el modo manual
 const unsigned long TIEMPO_MANTENER_ANG = 2000; // ms que se mantiene el ángulo manual
 
-// -------------------------
 // OBJETOS
-// -------------------------
 DHT dht(DHTPIN, DHTTYPE);
 SoftwareSerial mySerial(10, 11);  // RX, TX con Arduino Tierra
 Servo servoMotor;
 
-// -------------------------
 // VARIABLES PARA LA MEDIA
-// -------------------------
 float bufferTemps[10];
 int indiceTemp = 0;
 int numTemp = 0;
 float mediaTemp = 0.0;
 
-// ===================================================
 // FUNCIONES AUXILIARES
-// ===================================================
 
 // Dispara el sensor ultrasónico y mide el tiempo de eco
 long medirPulso() {
@@ -84,8 +72,8 @@ float medirDistanciaMedia(int n) {
   for (int i = 0; i < n; i++) {
     long duracion = medirPulso();
 
-    if (duracion == 0) { // por si no ha habido eco
-      continue;          // salta al siguiente valor y descarta el actual
+    if (duracion == 0) { 
+      continue;         
     }
     float d = duracion * 0.0343 / 2.0;
 
@@ -100,9 +88,8 @@ float medirDistanciaMedia(int n) {
   }
 
   if (medidas_validas == 0)
-    return -1.0;                      // error: no se obtuvo ninguna medida válida
+    return -1.0;                  
 
-  // Ordenación con método burbuja para obtener la mediana
   for (int i = 0; i < medidas_validas - 1; i++) {
     for (int j = 0; j < medidas_validas - 1 - i; j++) {
       if (v[j] > v[j + 1]) {
@@ -113,10 +100,9 @@ float medirDistanciaMedia(int n) {
     }
   }
 
-  return v[medidas_validas / 2]; // valor central (mediana)
+  return v[medidas_validas / 2]; 
 }
 
-// Calcula la media de las últimas temperaturas almacenadas
 float calcularMedia() {
   if (numTemp == 0) return 0.0;
   float suma = 0;
@@ -124,16 +110,14 @@ float calcularMedia() {
   return suma / numTemp;
 }
 
-// ===================================================
 // SETUP
-// ===================================================
 void setup() {
   pinMode(LED_PIN, OUTPUT);
   pinMode(TRIG_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT);
 
-  Serial.begin(9600);      // Debug local (opcional, hacia PC)
-  mySerial.begin(9600);    // Comunicación con Tierra
+  Serial.begin(9600);      
+  mySerial.begin(9600);    
 
   Serial.setTimeout(50);
   mySerial.setTimeout(50);
@@ -148,15 +132,11 @@ void setup() {
   tUltimoServo = millis();
 }
 
-// ===================================================
 // LOOP PRINCIPAL
-// ===================================================
 void loop() {
   unsigned long ahora = millis();
 
-  // =================================================
   // COMANDOS DESDE TIERRA (Arduino Tierra → mySerial)
-  // =================================================
   if (mySerial.available()) {
     String orden = mySerial.readStringUntil('\n');
     orden.trim();
@@ -195,9 +175,7 @@ void loop() {
     }
   }
 
-  // =================================================
   // LECTURA Y ENVÍO DHT (Temperatura / Humedad)
-  // =================================================
   if (enviarDatos && (ahora - ultimoEnvio >= intervaloEnvio)) {
     float h = dht.readHumidity();
     float t = dht.readTemperature();
@@ -221,13 +199,9 @@ void loop() {
     ultimoEnvio = ahora;
   }
 
-  // =================================================
   // CONTROL MANUAL DEL SERVO
-  // =================================================
 
-  // =================================================
   // MEDICIÓN DE DISTANCIA (ultrasonidos)
-  // =================================================
   if (ahora - tUltimaMedicion >= INTERVALO_DIST) {
     tUltimaMedicion = ahora;
     float distancia = medirDistanciaMedia(NUM_MEDIDAS); // número de lecturas que hacen media
@@ -244,9 +218,7 @@ void loop() {
     }
   }
 
-  // =================================================
   // MOVIMIENTO AUTOMÁTICO SERVO (modo radar)
-  // =================================================
   
   while ((unsigned long)(ahora - tUltimoServo) >= INTERVALO_SERVO) {
     tUltimoServo += INTERVALO_SERVO;
