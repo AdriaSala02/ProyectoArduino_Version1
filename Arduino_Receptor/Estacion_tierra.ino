@@ -1,7 +1,5 @@
-// ================================================
 // === ARDUINO ESTACIÓN DE TIERRA ================
 // === Puente entre Satélite y PC (Python) =======
-// ================================================
 
 #include <SoftwareSerial.h>
 
@@ -28,17 +26,13 @@ void setup() {
 }
 
 void loop() {
-  // =================================================
   // DATOS DESDE SATÉLITE → PC
-  // =================================================
   while (SatSerial.available()) {
     char c = SatSerial.read();
     Serial.write(c);
   }
 
-  // =================================================
   // COMANDOS DESDE PYTHON → SATÉLITE
-  // =================================================
   if (Serial.available()) {
     String comando = Serial.readStringUntil('\n');
     comando.trim();
