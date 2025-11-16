@@ -2,4 +2,5 @@
 Lucas - Miguel - Adrià
 
 Video_versión1 = https://drive.google.com/file/d/1XmfOJqJDGHjQLQY8ZYJNiui7cKkYVPPw/view
-Video_versión2 = 
+
+Video_versión2 = https://drive.google.com/file/d/1Rikm1Z6GNDDqksNMI3WjqB1GCJFMTACa/view?t=3
